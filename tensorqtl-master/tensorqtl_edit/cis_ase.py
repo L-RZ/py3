@@ -711,8 +711,8 @@ def map_independent(genotype_df, variant_df, cis_df, phenotype_df, phenotype_pos
         signif_threshold = float(signif_th)
     else:
         signif_threshold = signif_df['pval_beta'].max()
-    # signif_df = signif_df[cols]
-    signif_threshold = signif_df['pval_beta'].max()
+    signif_df = signif_df[cols]
+    # signif_threshold = signif_df['pval_beta'].max()
     # subset significant phenotypes
     if group_s is None:
         ix = phenotype_df.index[phenotype_df.index.isin(signif_df.index)]
@@ -779,7 +779,7 @@ def map_independent(genotype_df, variant_df, cis_df, phenotype_df, phenotype_pos
                 # phe_covariates_t = covariates_t[phe_used_index,]  # filter on cov
                 # residualizer = Residualizer(phe_covariates_t)
                 # dof = phenotype_t.shape[0] - 2 - phe_covariates_t.shape[1]
-                covariates_array = covariates_df.values[phe_used_index,]
+                covariates_array = covariates_df.values[phe_used_index, ]
             else:
                 residualizer = None
                 dof = phenotype_df.shape[1] - 2
