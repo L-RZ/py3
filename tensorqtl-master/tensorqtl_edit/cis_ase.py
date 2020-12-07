@@ -779,7 +779,7 @@ def map_independent(genotype_df, variant_df, cis_df, phenotype_df, phenotype_pos
                 # phe_covariates_t = covariates_t[phe_used_index,]  # filter on cov
                 # residualizer = Residualizer(phe_covariates_t)
                 # dof = phenotype_t.shape[0] - 2 - phe_covariates_t.shape[1]
-                covariates_array = covariates_df.values[phe_used_index, ]
+                covariates_array = covariates_df.values[phe_used_index.cpu().numpy(), ]
             else:
                 residualizer = None
                 dof = phenotype_df.shape[1] - 2
@@ -795,8 +795,9 @@ def map_independent(genotype_df, variant_df, cis_df, phenotype_df, phenotype_pos
                 variant_id = forward_df[-1]['variant_id']                             
                 var_sig_whole_ix = ix_dict[variant_id]
                 var_sig_range_ix = gp_range_list.index(var_sig_whole_ix)
-                ig = genotypes_t[var_sig_range_ix, :].cpu().numpy()
-                
+                ig_t = genotypes_t[var_sig_range_ix, :]
+                ig = ig_t.cpu().numpy()
+
                 # ig = genotype_df.values[ix_dict[variant_id], genotype_ix] # error: unimputed gt
                 
                 dosage_dict[variant_id] = ig
