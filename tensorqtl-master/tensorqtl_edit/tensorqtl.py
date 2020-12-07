@@ -144,7 +144,7 @@ def main():
         elif args.mode=='cis_independent':
             summary_df = pd.read_csv(args.cis_output, sep='\t', index_col=0)
             summary_df.rename(columns={'minor_allele_samples':'ma_samples', 'minor_allele_count':'ma_count'}, inplace=True)
-            res_df = cis.map_independent(genotype_df, variant_df, summary_df, phenotype_df, phenotype_pos_df, covariates_df,
+            res_df = cis_ase.map_independent(genotype_df, variant_df, summary_df, phenotype_df, phenotype_pos_df, covariates_df,
                                          group_s=group_s, fdr=args.fdr, nperm=args.permutations, window=args.window,
                                          logger=logger, seed=args.seed, verbose=True)
             logger.write('  * writing output')
