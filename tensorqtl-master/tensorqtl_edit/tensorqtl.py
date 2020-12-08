@@ -118,6 +118,17 @@ def main():
             # out_file = os.path.join(args.output_dir, args.prefix+'.cis_qtl.txt.gz')
             res_df.to_csv(out_file, sep='\t', float_format='%.6g')
         elif args.mode=='cis_nominal':
+            if args.cis_output and os.path.exists(args.cis_output):  # only run on the significant phenotype
+                fdr = args.fdr
+                logger.write(' * only using FDR < {} phenotype'.format(fdr))
+                cis_df = pd.read_csv(args.cis_output, sep='\t', index_col=0)
+                fdr_col = 'qval'
+                signif_df = cis_df[cis_df[fdr_col] <= fdr].copy()
+                ix = phenotype_df.index[phenotype_df.index.isin(signif_df.index)]
+                logger.write('  * {}/{} significant phenotypes'.format(signif_df.shape[0], cis_df.shape[0]))
+                phenotype_df = phenotype_df.loc[ix]
+                phenotype_pos_df = phenotype_pos_df.loc[ix]
+
             if not args.load_split:
                 cis_ase.map_nominal(genotype_df, variant_df, phenotype_df, phenotype_pos_df, args.prefix, covariates_df=covariates_df,
                                 interaction_s=interaction_s, maf_threshold_interaction=args.maf_threshold_interaction,
