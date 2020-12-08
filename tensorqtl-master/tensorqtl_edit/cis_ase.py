@@ -234,10 +234,12 @@ def map_nominal(genotype_df, variant_df, phenotype_df, phenotype_pos_df, prefix,
         chr_res['maf'] =          np.empty(n, dtype=np.float32)
         chr_res['ma_samples'] =   np.empty(n, dtype=np.int32)
         chr_res['ma_count'] =     np.empty(n, dtype=np.int32)
+
         if interaction_s is None:
             chr_res['pval_nominal'] = np.empty(n, dtype=np.float64)
             chr_res['slope'] =        np.empty(n, dtype=np.float32)
             chr_res['slope_se'] =     np.empty(n, dtype=np.float32)
+            chr_res['dof'] =          np.empty(n, dtype=np.int32)
         else:
             chr_res['pval_g'] =  np.empty(n, dtype=np.float64)
             chr_res['b_g'] =     np.empty(n, dtype=np.float32)
@@ -315,6 +317,7 @@ def map_nominal(genotype_df, variant_df, phenotype_df, phenotype_pos_df, prefix,
                     chr_res['maf'][start:start+n] = maf
                     chr_res['ma_samples'][start:start+n] = ma_samples
                     chr_res['ma_count'][start:start+n] = ma_count
+                    chr_res['dof'][start:start+n] = np.array([dof] * n, dtype=np.int32)
                     if interaction_s is None:
                         chr_res['pval_nominal'][start:start+n] = tstat
                         chr_res['slope'][start:start+n] = slope
@@ -443,7 +446,7 @@ def map_nominal(genotype_df, variant_df, phenotype_df, phenotype_pos_df, prefix,
             if interaction_s is None:
                 m = chr_res_df['pval_nominal'].notnull()
                 # chr_res_df.loc[m, 'pval_nominal'] = 2*stats.t.cdf(-chr_res_df.loc[m, 'pval_nominal'].abs(), dof)
-                chr_res_df.loc[m, 'pval_nominal'] = stats.t.sf(chr_res_df.loc[m, 'pval_nominal'].abs(), dof) # one tail for ASE zscore only
+                chr_res_df.loc[m, 'pval_nominal'] = stats.t.sf(chr_res_df.loc[m, 'pval_nominal'], chr_res_df.loc[m, 'dof']) # one tail for ASE zscore only
 
             else:
                 m = chr_res_df['pval_gi'].notnull()
@@ -452,7 +455,7 @@ def map_nominal(genotype_df, variant_df, phenotype_df, phenotype_pos_df, prefix,
                 chr_res_df.loc[m, 'pval_gi'] = 2*stats.t.cdf(-chr_res_df.loc[m, 'pval_gi'].abs(), dof)
             print('    * writing output')
             # chr_res_df.to_parquet(os.path.join(output_dir, '{}.cis_qtl_pairs.{}.parquet'.format(prefix, chrom)))
-            chr_res_df.to_csv(os.path.join(output_dir, '{}.cis_qtl_pairs.{}.txt.gz'.format(prefix, chrom)), sep='\t')
+            chr_res_df.to_csv(os.path.join(output_dir, '{}.cis_qtl_pairs.{}.txt.gz'.format(prefix, chrom)), sep='\t', index=False)
 
     if interaction_s is not None and len(best_assoc) > 0:
         best_assoc = pd.concat(best_assoc, axis=1, sort=False).T.set_index('phenotype_id').infer_objects()
