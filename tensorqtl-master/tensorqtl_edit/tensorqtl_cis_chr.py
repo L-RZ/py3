@@ -74,12 +74,10 @@ if mode == 'cis':
                              phenotype_pos_df,
                              covariates_df=covariates_df, seed=args.seed
                              )
-    out_file = os.path.join(args.output_dir, args.prefix + '.cis_qtl.txt.gz')
+    out_file = os.path.join(args.output_dir, prefix + '.cis_qtl.txt.gz')
     cis_df.to_csv(out_file, sep='\t')
 elif mode == 'cis_independent':
     cis_df = pd.read_csv(in_cis_addr, sep='\t', index_col=0)
-
-
     if excluded_chr_list:
         if args.p_beta_th:
             p_beta_th = float(args.p_beta_th)
@@ -103,7 +101,7 @@ elif mode == 'cis_independent':
                                        phenotype_df, phenotype_pos_df,
                                        covariates_df=covariates_df, fdr=fdr, seed=args.seed
                                        )
-    out_file = os.path.join(args.output_dir, args.prefix + '.cis_independent_qtl.txt.gz')
+    out_file = os.path.join(args.output_dir, prefix + '.cis_independent_qtl.txt.gz')
     indep_df.to_csv(out_file, sep='\t', index=False)
 
 logger.write('[{}] Finished mapping'.format(datetime.now().strftime("%b %d %H:%M:%S")))
