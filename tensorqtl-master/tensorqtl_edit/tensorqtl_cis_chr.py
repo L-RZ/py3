@@ -51,7 +51,7 @@ phenotype_df, phenotype_pos_df = read_phenotype_bed(expression_bed)
 
 if args.covariates is not None:
     logger.write('  * reading covariates ({})'.format(args.cov))
-    covariates_df = pd.read_csv(args.covariates, sep='\t', index_col=0).T
+    covariates_df = pd.read_csv(args.cov, sep='\t', index_col=0).T
     assert np.all(phenotype_df.columns == covariates_df.index)
 
 pr = genotypeio.PlinkReader(plink_prefix_path, exclude_chrs=excluded_chr_list)
