@@ -49,7 +49,7 @@ logger.write('  * reading phenotypes ({})'.format(args.input))
 phenotype_df, phenotype_pos_df = read_phenotype_bed(expression_bed)
 # covariates_df = pd.read_csv(covariates_file, sep='\t', index_col=0).T
 
-if args.covariates is not None:
+if args.cov is not None:
     logger.write('  * reading covariates ({})'.format(args.cov))
     covariates_df = pd.read_csv(args.cov, sep='\t', index_col=0).T
     assert np.all(phenotype_df.columns == covariates_df.index)
