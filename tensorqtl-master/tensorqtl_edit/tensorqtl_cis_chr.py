@@ -17,7 +17,7 @@ parser.add_argument('--output_dir', default='.', help='Output directory')
 parser.add_argument('--chr', '-r', help='select chr to run (e.g. chr1 (default All)', default='All')
 parser.add_argument('--mode', '-m', choices=['cis', 'cis_nominal', 'cis_independent', 'trans'],
                     help='mode: cis cis_nominal cis_independent', required=True)
-parser.add_argument('--cis_output', help='cis output results with FDR (only for mode: indep')
+parser.add_argument('--cis_output', help='cis output results with FDR (only for mode: indep', default=None)
 parser.add_argument('--fdr', help='fdr threshold (only for mode: indep), default=0.05', default=0.05)
 parser.add_argument('--p_beta_th', help='p_beta threshold genome wide @ FDR (only for mode: indep)', default=None)
 parser.add_argument('--seed', default=None, type=int, help='Seed for permutations.')
@@ -34,7 +34,7 @@ plink_prefix_path = args.geno
 prefix = args.out
 chr_id = args.chr
 mode = args.mode
-in_cis_addr = args.in_cis
+in_cis_addr = args.cis_output
 fdr = float(args.fdr)
 
 if args.chr == 'All':
