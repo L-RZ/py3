@@ -6,6 +6,7 @@ from core import *
 import genotypeio, eigenmt
 import cis_ase
 import argparse
+from datetime import datetime
 
 parser = argparse.ArgumentParser(description='linear regression: Z-score ~ Heter + COV1+ ... + COVn\n using tensorqtl')
 parser.add_argument('--input', '-i', help='exon_id z-value bed file ', action='store')
@@ -43,10 +44,11 @@ else:
     all_chrs_list.remove(chr_id)
     excluded_chr_list = all_chrs_list
 
+logger.write('[{}] Running TensorQTL: {}-QTL mapping'.format(datetime.now().strftime("%b %d %H:%M:%S"), args.mode.split('_')[0]))
 
 # load phenotypes and covariates
 logger.write('  * reading phenotypes ({})'.format(args.input))
-phenotype_df, phenotype_pos_df = read_phenotype_bed(expression_bed)
+phenotype_df, phenotype_pos_df = read_phenotype_bed(args.input)
 # covariates_df = pd.read_csv(covariates_file, sep='\t', index_col=0).T
 
 if args.cov is not None:
@@ -104,3 +106,4 @@ elif mode == 'cis_independent':
     out_file = os.path.join(args.output_dir, args.prefix + '.cis_independent_qtl.txt.gz')
     indep_df.to_csv(out_file, sep='\t', index=False)
 
+logger.write('[{}] Finished mapping'.format(datetime.now().strftime("%b %d %H:%M:%S")))
