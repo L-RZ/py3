@@ -15,8 +15,8 @@ parser.add_argument('--out', '-o', help='output perfix file ', action='store')
 parser.add_argument('--output_dir', default='.', help='Output directory')
 # parser.add_argument('--maf', '-m', help='MAF filter remove low maf', default='0.001')
 parser.add_argument('--chr', '-r', help='select chr to run (e.g. chr1 (default All)', default='All')
-parser.add_argument('--mode', '-m', choices=['cis_emp', 'indep', 'cis_nominal'], help='mode: cis indep cis_nominal',
-                    required=True)
+parser.add_argument('--mode', '-m', choices=['cis', 'cis_nominal', 'cis_independent', 'trans'],
+                    help='mode: cis cis_nominal cis_independent', required=True)
 parser.add_argument('--cis_output', help='cis output results with FDR (only for mode: indep')
 parser.add_argument('--fdr', help='fdr threshold (only for mode: indep), default=0.05', default=0.05)
 parser.add_argument('--p_beta_th', help='p_beta threshold genome wide @ FDR (only for mode: indep)', default=None)
