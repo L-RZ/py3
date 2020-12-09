@@ -591,12 +591,23 @@ def map_cis(genotype_df, variant_df, phenotype_df, phenotype_pos_df, covariates_
             # copy genotypes to GPU
             genotypes_t = torch.tensor(genotypes, dtype=torch.float).to(device)
             genotypes_t = genotypes_t[:, genotype_ix_t]
+            impute_mean(genotypes_t)
             phenotype_t = torch.tensor(phenotype, dtype=torch.float).to(device)
 
             # filter on phenotype to remove NA sample (mark as -1 or 'NA') edit by lrz
             phe_used_index = phenotype_t != -1  # no missing phenotype
             phenotype_t = phenotype_t[phe_used_index]
             genotypes_t = genotypes_t[:, phe_used_index]
+
+            # filter monomorphic variants
+            mono_t = (genotypes_t == genotypes_t[:, [0]]).all(1)
+            if mono_t.any():
+                genotypes_t = genotypes_t[~mono_t]
+                genotype_range = genotype_range[~mono_t.cpu()]
+                # logger.write('    * WARNING: excluding {} monomorphic variants'.format(mono_t.sum()))  # turn off this waring
+            if genotypes_t.shape[0] == 0:
+                logger.write('WARNING: skipping {} (no valid variants)'.format(phenotype_id))
+                continue
 
             # permutation indices:  permutate on each phenotype
             n_samples = phenotype_t.shape[0]  # after removing missing
@@ -617,17 +628,9 @@ def map_cis(genotype_df, variant_df, phenotype_df, phenotype_pos_df, covariates_
                 dof = phenotype_df.shape[1] - 2
             if dof <= 0:
                 continue
-            # filter monomorphic variants
-            mono_t = (genotypes_t == genotypes_t[:, [0]]).all(1)
-            if mono_t.any():
-                genotypes_t = genotypes_t[~mono_t]
-                genotype_range = genotype_range[~mono_t.cpu()]
-                # logger.write('    * WARNING: excluding {} monomorphic variants'.format(mono_t.sum()))  # turn off this waring
-            if genotypes_t.shape[0] == 0:
-                logger.write('WARNING: skipping {} (no valid variants)'.format(phenotype_id))
-                continue
 
-            impute_mean(genotypes_t)
+
+            # impute_mean(genotypes_t)
 
             # res = calculate_cis_permutations(genotypes_t, phenotype_t, permutation_ix_t, residualizer=residualizer)
             # r_nominal, std_ratio, var_ix, r2_perm, g = [i.cpu().numpy() for i in res]
