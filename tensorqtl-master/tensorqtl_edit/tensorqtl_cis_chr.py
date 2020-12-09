@@ -9,6 +9,8 @@ import argparse
 from datetime import datetime
 
 parser = argparse.ArgumentParser(description='linear regression: Z-score ~ Heter + COV1+ ... + COVn\n using tensorqtl')
+parser.add_argument('--mode', '-m', choices=['cis', 'cis_nominal', 'cis_independent', 'trans'],
+                    help='mode: cis cis_nominal cis_independent', required=True)
 parser.add_argument('--input', '-i', help='exon_id z-value bed file ', action='store')
 parser.add_argument('--geno', '-g', help='genoytpe file bfile prefix')
 parser.add_argument('--cov', '-c', help='cov file ')
@@ -16,8 +18,6 @@ parser.add_argument('--out', '-o', help='output perfix file ', action='store')
 parser.add_argument('--output_dir', default='.', help='Output directory')
 # parser.add_argument('--maf', '-m', help='MAF filter remove low maf', default='0.001')
 parser.add_argument('--chr', '-r', help='select chr to run (e.g. chr1 (default All)', default='All')
-parser.add_argument('--mode', '-m', choices=['cis', 'cis_nominal', 'cis_independent', 'trans'],
-                    help='mode: cis cis_nominal cis_independent', required=True)
 parser.add_argument('--cis_output', help='cis output results with FDR (only for mode: indep', default=None)
 parser.add_argument('--fdr', help='fdr threshold (only for mode: indep), default=0.05', default=0.05)
 parser.add_argument('--p_beta_th', help='p_beta threshold genome wide @ FDR (only for mode: indep)', default=None)
@@ -45,6 +45,11 @@ else:
     excluded_chr_list = all_chrs_list
 
 logger.write('[{}] Running TensorQTL: {}-QTL mapping'.format(datetime.now().strftime("%b %d %H:%M:%S"), args.mode.split('_')[0]))
+
+# check output_dir
+if not os.path.isdir(args.output_dir):
+    os.makedirs(args.output_dir)
+logger = SimpleLogger(os.path.join(args.output_dir, prefix+'.tensorQTL.{}.log'.format(args.mode)))
 
 # load phenotypes and covariates
 logger.write('  * reading phenotypes ({})'.format(args.input))
@@ -94,7 +99,6 @@ elif mode == 'cis_independent':
                                            phenotype_pos_df.loc[phenotype_pos_df['chr'] == chr_id],
                                            covariates_df=covariates_df, fdr=fdr, seed=args.seed
                                            )
-
 
     else:
         indep_df = cis_ase.map_independent(genotype_df, variant_df, cis_df,
