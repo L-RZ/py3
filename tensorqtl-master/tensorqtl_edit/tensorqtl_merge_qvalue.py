@@ -8,7 +8,7 @@ parser = argparse.ArgumentParser(description='merge results to one result and ca
 
 parser.add_argument('--input', '-i', help='cis p-value results (e.g. -i res1.txt res2.txt ...',
                     action='store', nargs='+')
-parser.add_argument('--output', '-o', help='genotype file bfile prefix')
+parser.add_argument('--output', '-o', help='output file address')
 parser.add_argument('--fdr', default=0.05, type=float,  help='FDR, default=0.05')
 parser.add_argument('--qvalue_lambda',  type=float, default=None,
                     help='lambda parameter for pi0est in qvalue. defulat=None (GTEX:0.85)')
