@@ -592,7 +592,7 @@ def map_cis(genotype_df, variant_df, phenotype_df, phenotype_pos_df, covariates_
             if mono_t.any():
                 genotypes_t = genotypes_t[~mono_t]
                 genotype_range = genotype_range[~mono_t.cpu()]
-                logger.write('    * WARNING: excluding {} monomorphic variants'.format(mono_t.sum()))
+                # logger.write('    * WARNING: excluding {} monomorphic variants'.format(mono_t.sum()))
             if genotypes_t.shape[0] == 0:
                 logger.write('WARNING: skipping {} (no valid variants)'.format(phenotype_id))
                 continue
