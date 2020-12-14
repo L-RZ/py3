@@ -254,7 +254,7 @@ def map_nominal(genotype_df, variant_df, phenotype_df, phenotype_pos_df, prefix,
                 phenotype_gene_id = phenotype_id.split('_')[0]
                 gene_express_t = torch.tensor(express_df[express_df.index == phenotype_gene_id].values,
                                               dtype=torch.float32).to(device).reshape(-1, 1)
-                covariates_gene_t = torch.vstack(covariates_t, gene_express_t)
+                covariates_gene_t = torch.hstack([covariates_t, gene_express_t])
                 residualizer = Residualizer(covariates_gene_t)
 
                 if interaction_s is None:
@@ -599,7 +599,7 @@ def map_cis(genotype_df, variant_df, phenotype_df, phenotype_pos_df, covariates_
             phenotype_gene_id = phenotype_id.split('_')[0]
             gene_express_t = torch.tensor(express_df[express_df.index == phenotype_gene_id].values, dtype=torch.float32).to(
                 device).reshape(-1, 1)
-            covariates_gene_t = torch.vstack(covariates_t, gene_express_t)
+            covariates_gene_t = torch.hstack(covariates_t, gene_express_t)
 
             residualizer = Residualizer(covariates_gene_t)
 
