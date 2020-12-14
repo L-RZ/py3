@@ -5,6 +5,7 @@ import os
 from core import *
 import genotypeio, eigenmt
 import cis_ase
+import cis_exon
 import argparse
 from datetime import datetime
 
@@ -19,6 +20,7 @@ parser.add_argument('--output_dir', default='.', help='Output directory')
 # parser.add_argument('--maf', '-m', help='MAF filter remove low maf', default='0.001')
 parser.add_argument('--chr', '-r', help='select chr to run (e.g. chr1 (default All)', default='All')
 parser.add_argument('--cis_output', help='cis output results with FDR (only for mode: indep', default=None)
+parser.add_argument('--cond_exp', help='gene expression bed.file as condition', default=None)
 parser.add_argument('--fdr', help='fdr threshold (only for mode: indep), default=0.05', default=0.05)
 parser.add_argument('--p_beta_th', help='p_beta threshold genome wide @ FDR (only for mode: indep)', default=None)
 parser.add_argument('--seed', default=None, type=int, help='Seed for permutations.')
@@ -61,24 +63,45 @@ if args.cov is not None:
     covariates_df = pd.read_csv(args.cov, sep='\t', index_col=0).T
     assert np.all(phenotype_df.columns == covariates_df.index)
 
+
+if args.cond_exp is not None:
+    express_df, express_pos_df = read_phenotype_bed(args.cond_exp)
+    assert np.all(phenotype_df.columns == express_df.index)
+
 pr = genotypeio.PlinkReader(plink_prefix_path, exclude_chrs=excluded_chr_list)
 genotype_df = pr.load_genotypes()
 variant_df = pr.bim.set_index('snp')[['chrom', 'pos']]
 
 if mode == 'cis':
     # cis-QTL: empirical p-values for phenotypes
-    if excluded_chr_list:
-        cis_df = cis_ase.map_cis(genotype_df, variant_df,
-                             phenotype_df.loc[phenotype_pos_df['chr'] == chr_id],
-                             phenotype_pos_df.loc[phenotype_pos_df['chr'] == chr_id],
-                             covariates_df=covariates_df, seed=args.seed
-                             )
+    if args.cond_exp: # gene expression as condition
+        if excluded_chr_list:
+            cis_df = cis_exon.map_cis(genotype_df, variant_df,
+                                 phenotype_df.loc[phenotype_pos_df['chr'] == chr_id],
+                                 phenotype_pos_df.loc[phenotype_pos_df['chr'] == chr_id],
+                                 covariates_df=covariates_df, seed=args.seed,
+                                 express_df=express_df, express_pos_df=express_pos_df
+                                 )
+        else:
+            cis_df = cis_exon.map_cis(genotype_df, variant_df,
+                                 phenotype_df,
+                                 phenotype_pos_df,
+                                 covariates_df=covariates_df, seed=args.seed,
+                                 express_df=express_df, express_pos_df=express_pos_df
+                                 )
     else:
-        cis_df = cis_ase.map_cis(genotype_df, variant_df,
-                             phenotype_df,
-                             phenotype_pos_df,
-                             covariates_df=covariates_df, seed=args.seed
-                             )
+        if excluded_chr_list:
+            cis_df = cis_ase.map_cis(genotype_df, variant_df,
+                                 phenotype_df.loc[phenotype_pos_df['chr'] == chr_id],
+                                 phenotype_pos_df.loc[phenotype_pos_df['chr'] == chr_id],
+                                 covariates_df=covariates_df, seed=args.seed
+                                 )
+        else:
+            cis_df = cis_ase.map_cis(genotype_df, variant_df,
+                                 phenotype_df,
+                                 phenotype_pos_df,
+                                 covariates_df=covariates_df, seed=args.seed
+                                 )
     out_file = os.path.join(args.output_dir, prefix + '.cis_qtl.txt.gz')
     cis_df.to_csv(out_file, sep='\t')
 elif mode == 'cis_independent':
