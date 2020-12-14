@@ -66,7 +66,7 @@ if args.cov is not None:
 
 if args.cond_exp is not None:
     express_df, express_pos_df = read_phenotype_bed(args.cond_exp)
-    assert np.all(phenotype_df.columns == express_df.index)
+    assert np.all(phenotype_df.columns == express_df.columns)
 
 pr = genotypeio.PlinkReader(plink_prefix_path, exclude_chrs=excluded_chr_list)
 genotype_df = pr.load_genotypes()
