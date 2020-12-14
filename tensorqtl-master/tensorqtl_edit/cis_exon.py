@@ -1,5 +1,5 @@
 # download from https://raw.githubusercontent.com/L-RZ/tensorqtl/master/tensorqtl/cis.py 2020-12-12
-
+# add gene expression as condition for each exon
 
 import torch
 import numpy as np
@@ -138,7 +138,8 @@ def calculate_association(genotype_df, phenotype_s, covariates_df=None,
 def map_nominal(genotype_df, variant_df, phenotype_df, phenotype_pos_df, prefix,
                 covariates_df=None, interaction_s=None, maf_threshold_interaction=0.05,
                 group_s=None, window=1000000, run_eigenmt=False,
-                output_dir='.', write_top=True, write_stats=True, logger=None, verbose=True):
+                output_dir='.', write_top=True, write_stats=True, logger=None, verbose=True,
+                express_df=None, express_pos_df=None):
     """
     cis-QTL mapping: nominal associations for all variant-phenotype pairs
 
@@ -148,6 +149,8 @@ def map_nominal(genotype_df, variant_df, phenotype_df, phenotype_pos_df, prefix,
     If interaction_s is provided, the top association per phenotype is
     written to <output_dir>/<prefix>.cis_qtl_top_assoc.txt.gz unless
     write_top is set to False, in which case it is returned as a DataFrame
+
+    # add gene expression as condition for each exon
     """
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -159,14 +162,21 @@ def map_nominal(genotype_df, variant_df, phenotype_df, phenotype_pos_df, prefix,
     logger.write('cis-QTL mapping: nominal associations for all variant-phenotype pairs')
     logger.write('  * {} samples'.format(phenotype_df.shape[1]))
     logger.write('  * {} phenotypes'.format(phenotype_df.shape[0]))
+
+
     if covariates_df is not None:
         assert np.all(phenotype_df.columns == covariates_df.index)
         logger.write('  * {} covariates'.format(covariates_df.shape[1]))
-        residualizer = Residualizer(torch.tensor(covariates_df.values, dtype=torch.float32).to(device))
+        covariates_t = torch.tensor(covariates_df.values, dtype=torch.float32).to(device)
+        # residualizer = Residualizer(torch.tensor(covariates_df.values, dtype=torch.float32).to(device))
         dof = phenotype_df.shape[1] - 2 - covariates_df.shape[1]
     else:
-        residualizer = None
+        # residualizer = None
         dof = phenotype_df.shape[1] - 2
+    if express_df is not None:
+        assert np.all(express_df.columns == phenotype_df.columns)
+        dof -= 1
+
     logger.write('  * {} variants'.format(variant_df.shape[0]))
     if interaction_s is not None:
         assert np.all(interaction_s.index == phenotype_df.columns)
@@ -240,6 +250,12 @@ def map_nominal(genotype_df, variant_df, phenotype_df, phenotype_pos_df, prefix,
                 tss_distance = np.int32(
                     variant_df['pos'].values[genotype_range[0]:genotype_range[-1] + 1] - igc.phenotype_tss[
                         phenotype_id])
+
+                phenotype_gene_id = phenotype_id.split('_')[0]
+                gene_express_t = torch.tensor(express_df[express_df.index == phenotype_gene_id].values,
+                                              dtype=torch.float32).to(device).reshape(-1, 1)
+                covariates_gene_t = torch.vstack(covariates_t, gene_express_t)
+                residualizer = Residualizer(covariates_gene_t)
 
                 if interaction_s is None:
                     res = calculate_cis_nominal(genotypes_t, phenotype_t, residualizer=residualizer)
@@ -417,7 +433,9 @@ def map_nominal(genotype_df, variant_df, phenotype_df, phenotype_pos_df, prefix,
                 chr_res_df.loc[m, 'pval_i'] = 2 * stats.t.cdf(-chr_res_df.loc[m, 'pval_i'].abs(), dof)
                 chr_res_df.loc[m, 'pval_gi'] = 2 * stats.t.cdf(-chr_res_df.loc[m, 'pval_gi'].abs(), dof)
             print('    * writing output')
-            chr_res_df.to_parquet(os.path.join(output_dir, '{}.cis_qtl_pairs.{}.parquet'.format(prefix, chrom)))
+            # chr_res_df.to_parquet(os.path.join(output_dir, '{}.cis_qtl_pairs.{}.parquet'.format(prefix, chrom)))
+            chr_res_df.to_csv(os.path.join(output_dir, '{}.cis_qtl_pairs.{}.txt.gz'.format(prefix, chrom)), sep='\t',
+                              index=False)
 
     if interaction_s is not None and len(best_assoc) > 0:
         best_assoc = pd.concat(best_assoc, axis=1, sort=False).T.set_index('phenotype_id').infer_objects()
@@ -510,7 +528,8 @@ def _process_group_permutations(buf, variant_df, tss, dof, group_id, nperm=10000
 
 def map_cis(genotype_df, variant_df, phenotype_df, phenotype_pos_df, covariates_df=None,
             group_s=None, beta_approx=True, nperm=10000,
-            window=1000000, logger=None, seed=None, verbose=True):
+            window=1000000, logger=None, seed=None, verbose=True,
+            express_df=None, express_pos_df=None):
     """Run cis-QTL mapping"""
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -524,14 +543,20 @@ def map_cis(genotype_df, variant_df, phenotype_df, phenotype_pos_df, covariates_
     if group_s is not None:
         logger.write('  * {} phenotype groups'.format(len(group_s.unique())))
         group_dict = group_s.to_dict()
+
     if covariates_df is not None:
         assert np.all(phenotype_df.columns == covariates_df.index)
         logger.write('  * {} covariates'.format(covariates_df.shape[1]))
-        residualizer = Residualizer(torch.tensor(covariates_df.values, dtype=torch.float32).to(device))
+        covariates_t = torch.tensor(covariates_df.values, dtype=torch.float32).to(device)
+        # residualizer = Residualizer(torch.tensor(covariates_df.values, dtype=torch.float32).to(device))
         dof = phenotype_df.shape[1] - 2 - covariates_df.shape[1]
     else:
         residualizer = None
         dof = phenotype_df.shape[1] - 2
+    if express_df is not None:
+        assert np.all(express_df.columns == phenotype_df.columns)
+        dof = dof - 1
+        logger.write('  * gene expression')
     logger.write('  * {} variants'.format(genotype_df.shape[0]))
 
     genotype_ix = np.array([genotype_df.columns.tolist().index(i) for i in phenotype_df.columns])
@@ -571,6 +596,12 @@ def map_cis(genotype_df, variant_df, phenotype_df, phenotype_pos_df, covariates_
             impute_mean(genotypes_t)
 
             phenotype_t = torch.tensor(phenotype, dtype=torch.float).to(device)
+            phenotype_gene_id = phenotype_id.split('_')[0]
+            gene_express_t = torch.tensor(express_df[express_df.index == phenotype_gene_id].values, dtype=torch.float32).to(
+                device).reshape(-1, 1)
+            covariates_gene_t = torch.vstack(covariates_t, gene_express_t)
+
+            residualizer = Residualizer(covariates_gene_t)
 
             res = calculate_cis_permutations(genotypes_t, phenotype_t, permutation_ix_t, residualizer=residualizer)
             r_nominal, std_ratio, var_ix, r2_perm, g = [i.cpu().numpy() for i in res]
@@ -623,7 +654,8 @@ def map_cis(genotype_df, variant_df, phenotype_df, phenotype_pos_df, covariates_
 
 def map_independent(genotype_df, variant_df, cis_df, phenotype_df, phenotype_pos_df, covariates_df,
                     group_s=None, fdr=0.05, fdr_col='qval', nperm=10000,
-                    window=1000000, logger=None, seed=None, verbose=True, signif_th=None):
+                    window=1000000, logger=None, seed=None, verbose=True, signif_th=None,
+                    express_df=None, express_pos_df=None):
     """
     Run independent cis-QTL mapping (forward-backward regression)
 
@@ -699,9 +731,14 @@ def map_independent(genotype_df, variant_df, cis_df, phenotype_df, phenotype_pos
             genotypes_t = genotypes_t[:, genotype_ix_t]
             impute_mean(genotypes_t)
 
+            phenotype_gene_id = phenotype_id.split('_')[0]
+            gene_express = express_df[express_df.index == phenotype_gene_id].values.reshape(-1, 1)
+
+
             # 1) forward pass
             forward_df = [signif_df.loc[phenotype_id]]  # initialize results with top variant
             covariates = covariates_df.values.copy()  # initialize covariates
+            covariates = np.hstack([covariates, gene_express])
             dosage_dict = {}
             gp_range_list = genotype_range.tolist()
             while True:
