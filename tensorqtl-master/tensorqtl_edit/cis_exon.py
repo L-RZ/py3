@@ -252,8 +252,12 @@ def map_nominal(genotype_df, variant_df, phenotype_df, phenotype_pos_df, prefix,
                         phenotype_id])
 
                 phenotype_gene_id = phenotype_id.split('_')[0]
-                gene_express_t = torch.tensor(express_df[express_df.index == phenotype_gene_id].values,
-                                              dtype=torch.float32).to(device).reshape(-1, 1)
+                a_gene_express = express_df[express_df.index == phenotype_gene_id]
+                if a_gene_express.shape[0] == 0:
+                    logger.write('WARNING: {} not in gene expression'.format(phenotype_id))
+                    continue
+                else:
+                    gene_express_t = torch.tensor(a_gene_express.values, dtype=torch.float32).to(device).reshape(-1, 1)
                 covariates_gene_t = torch.hstack([covariates_t, gene_express_t])
                 residualizer = Residualizer(covariates_gene_t)
 
@@ -597,8 +601,12 @@ def map_cis(genotype_df, variant_df, phenotype_df, phenotype_pos_df, covariates_
 
             phenotype_t = torch.tensor(phenotype, dtype=torch.float).to(device)
             phenotype_gene_id = phenotype_id.split('_')[0]
-            gene_express_t = torch.tensor(express_df[express_df.index == phenotype_gene_id].values, dtype=torch.float32).to(
-                device).reshape(-1, 1)
+            a_gene_express = express_df[express_df.index == phenotype_gene_id]
+            if a_gene_express.shape[0] == 0:
+                logger.write('WARNING: {} not in gene expression'.format(phenotype_id))
+                continue
+            else:
+                gene_express_t = torch.tensor(a_gene_express.values, dtype=torch.float32).to(device).reshape(-1, 1)
             covariates_gene_t = torch.hstack([covariates_t, gene_express_t])
 
             residualizer = Residualizer(covariates_gene_t)
@@ -733,8 +741,9 @@ def map_independent(genotype_df, variant_df, cis_df, phenotype_df, phenotype_pos
 
             phenotype_gene_id = phenotype_id.split('_')[0]
             gene_express = express_df[express_df.index == phenotype_gene_id].values.reshape(-1, 1)
-
-
+            if gene_express.shape[1] == 0:
+                logger.write('WARNING: {} not in gene expression'.format(phenotype_id))
+                continue
             # 1) forward pass
             forward_df = [signif_df.loc[phenotype_id]]  # initialize results with top variant
             covariates = covariates_df.values.copy()  # initialize covariates
