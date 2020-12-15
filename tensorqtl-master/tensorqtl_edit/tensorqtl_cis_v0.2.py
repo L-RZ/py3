@@ -1,4 +1,5 @@
 # python 3
+# for exon expression analysis on each Chr
 import pandas as pd
 import torch
 import tensorqtl
@@ -27,7 +28,6 @@ args = parser.parse_args()
 all_chrs_list = ['chr1', 'chr2', 'chr3', 'chr4', 'chr5', 'chr6', 'chr7', 'chr8', 'chr9', 'chr10', 'chr11', 'chr12',
                  'chr13', 'chr14', 'chr15', 'chr16', 'chr17', 'chr18', 'chr19', 'chr20', 'chr21', 'chr22']
 
-logger = tensorqtl.core.SimpleLogger()
 
 expression_bed = args.input
 covariates_file = args.cov
@@ -38,6 +38,12 @@ mode = args.mode
 in_cis_addr = args.in_cis
 fdr = float(args.fdr)
 
+# check output_dir
+if not os.path.isdir(args.output_dir):
+    os.makedirs(args.output_dir)
+logger = tensorqtl.core.SimpleLogger(os.path.join(args.output_dir, prefix+'.tensorQTL.{}.log'.format(args.mode)))
+
+
 if args.chr == 'All':
     excluded_chr_list = None
 else:
@@ -46,10 +52,8 @@ else:
 
 logger.write('[{}] Running TensorQTL: {}-QTL mapping'.format(datetime.now().strftime("%b %d %H:%M:%S"), args.mode.split('_')[0]))
 
-# check output_dir
-if not os.path.isdir(args.output_dir):
-    os.makedirs(args.output_dir)
-logger = SimpleLogger(os.path.join(args.output_dir, prefix+'.tensorQTL.{}.log'.format(args.mode)))
+
+# logger = SimpleLogger()
 
 # load phenotypes and covariates
 phenotype_df, phenotype_pos_df = tensorqtl.read_phenotype_bed(expression_bed)

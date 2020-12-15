@@ -225,6 +225,7 @@ def map_nominal(genotype_df, variant_df, phenotype_df, phenotype_pos_df, prefix,
             chr_res['pval_nominal'] = np.empty(n, dtype=np.float64)
             chr_res['slope'] = np.empty(n, dtype=np.float32)
             chr_res['slope_se'] = np.empty(n, dtype=np.float32)
+            chr_res['dof'] = np.empty(n, dtype=np.int32)
         else:
             chr_res['pval_g'] = np.empty(n, dtype=np.float64)
             chr_res['b_g'] = np.empty(n, dtype=np.float32)
